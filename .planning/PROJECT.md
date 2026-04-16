@@ -8,6 +8,23 @@ EVE Local Alert is a Windows desktop application that monitors EVE Online's "Loc
 
 Detect hostile markers in EVE Online local chat regions and alert the user immediately. If detection or alerting fails, the tool is useless.
 
+## Current Milestone: v1.0 Core Alert Pipeline
+
+**Goal:** Ship the complete capture → detect → alert loop with both capture modes, interactive ROI setup, and all alert types.
+
+**Target features:**
+- MSS desktop region capture + WGC multi-window capture
+- HSV color match detection (configurable ranges, min_pixels/min_ratio)
+- Popup notification with auto-close + cooldown
+- Sound playback (configurable sound file)
+- Windows Toast notification
+- Interactive ROI selector with real-time preview + hit box overlay
+- JSON config save/load with runtime freeze
+- System tray (minimize-to-tray, quick start/stop)
+- Debug mode with HSV mask image dumps
+- Per-ROI debounce/cooldown
+- Chinese UI (no i18n framework)
+
 ## Requirements
 
 ### Validated
@@ -19,7 +36,6 @@ Detect hostile markers in EVE Online local chat regions and alert the user immed
 - [ ] Capture screen regions via Windows Graphics Capture (WGC) API for multi-window monitoring
 - [ ] Capture screen regions via MSS-style desktop capture for single ROI monitoring
 - [ ] Detect hostile markers using HSV color matching (configurable HSV ranges with min_pixels/min_ratio thresholds)
-- [ ] Detect hostile markers using OpenCV template matching (multi-template, configurable threshold, scale search)
 - [ ] Alert via popup notification with auto-close and cooldown
 - [ ] Alert via sound playback (configurable sound file)
 - [ ] Alert via Windows Toast notification
@@ -27,10 +43,16 @@ Detect hostile markers in EVE Online local chat regions and alert the user immed
 - [ ] Multi-window monitoring with per-window capture + detect pipelines
 - [ ] Configuration save/load to JSON with runtime freeze (deep copy on start)
 - [ ] System tray support (minimize-to-tray, quick start/stop)
-- [ ] Per-ROI and per-window debounce/cooldown overrides
-- [ ] Chinese UI with i18n-ready architecture
-- [ ] Morphology filtering (min/max area, min/max width-height) for detection noise suppression
-- [ ] Debug mode with image dumps for HSV masks and template match overlays
+- [ ] Per-ROI debounce/cooldown
+- [ ] Debug mode with image dumps for HSV masks
+- [ ] Chinese UI
+
+### Future (deferred from v1.0)
+
+- Detect hostile markers using OpenCV template matching (multi-template, configurable threshold, scale search)
+- Per-window debounce/cooldown overrides
+- i18n-ready architecture
+- Morphology filtering (min/max area, min/max width-height) for detection noise suppression
 
 ### Out of Scope
 
@@ -86,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-15 after initialization*
+*Last updated: 2026-04-16 — Milestone v1.0 started*
