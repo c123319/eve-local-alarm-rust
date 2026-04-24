@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import SettingsPanel from './components/SettingsPanel';
+import { SettingsPanel } from './components/SettingsPanel';
 
 function App() {
   // Set document title to Chinese on mount
