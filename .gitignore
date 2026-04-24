@@ -35,3 +35,8 @@ dist-ssr
 **/*.rs.bk
 *.pdb
 **/mutants.out*/
+
+# Local AI/tooling directories
+.claude/
+.omc/
+.opencode/
