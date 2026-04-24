@@ -91,10 +91,8 @@ export function SettingsPanel() {
       console.error('Failed to get DPI info:', err);
     }
 
-    // 检查 OpenCV（Phase 1 占位符 - 将在构建时验证）
-    // 目前，基于是否在开发模式显示状态
-    // 真正的 OpenCV 检查将在 Phase 3 中进行
-    setOpencvStatus('OpenCV 已配置 (Phase 1 验证通过)');
+    // OpenCV 在 Phase 1 仅完成文档与构建约定，不做运行时探测
+    setOpencvStatus('OpenCV 需按 BUILD.md 手动配置；当前界面不做运行时探测');
   };
 
   const fetchConfigStatus = async () => {
@@ -191,6 +189,9 @@ export function SettingsPanel() {
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <strong>显示器 ID：</strong> {dpiInfo.display_id}
+              </div>
+              <div style={{ marginBottom: '10px', color: '#856404' }}>
+                当前 DPI 信息为 Phase 1 基线占位；Windows API 实时读取将在后续捕获/ROI 阶段接入。
               </div>
             </div>
           )}
