@@ -4,8 +4,10 @@ mod commands;
 mod models;
 // Store modules
 mod store;
+// DPI module
+mod dpi;
 
-use commands::{save_config, load_config, get_default_config, get_config_status};
+use commands::{save_config, load_config, get_default_config, get_config_status, get_dpi_info, validate_roi_coordinates};
 
 /// Event names for Rust → Frontend communication
 pub mod events {
@@ -23,6 +25,8 @@ pub fn run() {
             load_config,
             get_default_config,
             get_config_status,
+            get_dpi_info,
+            validate_roi_coordinates,
         ])
         .setup(|_app| {
             // Event channel setup for future Phase 2+ use
