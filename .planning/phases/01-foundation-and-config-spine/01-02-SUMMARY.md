@@ -68,6 +68,7 @@ completed: 2026-04-24
 - Four Tauri commands: save_config, load_config, get_default_config, get_config_status
 - Frontend UI integration with Chinese interface and auto-load on startup
 - Config status display with path, exists, valid, and last modified fields
+- 为核心配置结构补充 `#[serde(default)]`，降低后续字段演进时整份配置被判坏的风险
 
 ## Task Commits
 
@@ -172,6 +173,7 @@ None - no external service configuration required. Config files are stored in pl
 - Runtime freeze function (`create_frozen_config`) available for Phase 2 monitoring
 - Config commands fully tested via cargo check and ready for UI verification
 - All constraints (D-01, D-02, D-03, D-04) implemented and verified
+- 旧配置/手工编辑配置在缺失部分字段时可自动回填默认值，而不是整体失败
 
 No blockers. Ready to proceed with Plan 01-03.
 

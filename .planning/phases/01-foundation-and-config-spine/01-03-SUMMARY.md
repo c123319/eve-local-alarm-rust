@@ -29,7 +29,7 @@ key-decisions:
   - "OpenCV 配置依赖环境变量（OPENCV_LINK_PATHS, OPENCV_INCLUDE_PATHS, OPENCV_LINK_LIBS）而非硬编码路径，提供 vcpkg 和手动安装两种方法"
   - "DPI 坐标转换使用四舍五入（round）而非向下取整，确保 UI 显示精确"
   - "DPI 失效检测同时检查缩放因子和显示器 ID，两者任一变化即触发失效"
-  - "OpenCV 状态在 Phase 1 为占位符，实际验证在构建时进行，避免运行时虚假检查"
+  - "OpenCV 状态在 Phase 1 仅展示文档/环境约定，仓库尚未接入 `opencv` crate，避免运行时虚假检查"
 
 patterns-established:
   - "Pattern 1: 物理坐标（PhysicalCoord）和显示坐标（DisplayCoord）的明确分离，所有内部系统记录使用物理像素"
@@ -63,7 +63,7 @@ completed: 2025-04-24T23:30:00Z
 - 实现 DPI 坐标契约（PhysicalCoord、DisplayCoord、DpiInfo）和转换函数（to_physical、to_display）
 - 实现 DPI 失效检测逻辑（check_dpi_invalidation），检查缩放因子和显示器 ID 变化
 - 添加 DPI Tauri 命令（get_dpi_info、validate_roi_coordinates）并注册到 invoke_handler
-- 更新 SettingsPanel.tsx 显示环境检查部分（DPI 信息和 OpenCV 状态），与配置状态部分同等突出
+- 更新 SettingsPanel.tsx 显示环境检查部分（DPI 基线信息和 OpenCV 配置提示），与配置状态部分同等突出
 - 编写 5 个 DPI 契约单元测试，全部通过
 
 ## Task Commits
@@ -113,9 +113,9 @@ _Note: TDD tasks may have multiple commits (test → feat → refactor)_
    - 影响：提供更严格的失效检测，确保 ROI 坐标正确
 
 4. **OpenCV 状态显示策略**
-   - 决定：Phase 1 使用占位符消息，实际 OpenCV 验证在构建时进行
-   - 理由：避免虚假的运行时检查，符合 D-05（优先可靠的开发机构建）和 D-08（构建时失败并提供清晰指导）
-   - 影响：UI 显示"OpenCV 已配置 (Phase 1 验证通过)"，真正的验证在编译时
+   - 决定：Phase 1 只展示文档和环境变量约定，不宣称仓库已经具备 OpenCV 运行时/构建时自检能力
+   - 理由：当前 `Cargo.toml` 尚未引入 `opencv` crate，避免 UI 和摘要比实际实现更乐观
+   - 影响：UI 明确提示开发者按 BUILD.md 完成手动配置，后续检测阶段再引入真实 OpenCV 校验链路
 
 ## Deviations from Plan
 
@@ -144,7 +144,7 @@ _Note: TDD tasks may have multiple commits (test → feat → refactor)_
 
 **外部服务/环境需要手动配置。** 参见 [BUILD.md](../../BUILD.md) 了解：
 - 安装 Rust 工具链（MSVC 目标）
-- 安装 Node.js 18+
+- 安装 Node.js 20.19+
 - 配置 OpenCV 4.8+（vcpkg 或手动安装）
 - 设置环境变量（OPENCV_LINK_PATHS, OPENCV_INCLUDE_PATHS, OPENCV_LINK_LIBS）
 - 验证构建：`cargo build --manifest-path src-tauri/Cargo.toml`
@@ -152,13 +152,14 @@ _Note: TDD tasks may have multiple commits (test → feat → refactor)_
 ## Next Phase Readiness
 
 ### 已准备就绪
-- DPI 坐标契约已实现并测试，ROI 和捕获阶段可直接使用
-- OpenCV 构建文档完整，开发者可按步骤配置环境
-- UI 环境状态集成完成，后续阶段可扩展更多环境检查
+- DPI 坐标契约骨架已实现并测试，ROI 和捕获阶段可在此基础上接入真实 Windows DPI 读取
+- OpenCV 构建文档完整，开发者可按步骤准备后续阶段所需环境
+- UI 环境状态集成完成，后续阶段可扩展更多真实环境检查
 
 ### 关注事项
-- OpenCV 实际功能验证将在 Phase 3（检测）中进行，当前仅确保构建时链接正确
-- DPI 信息获取目前返回默认值（scale_factor=1.0），Phase 2 将实现 Windows API 调用
+- OpenCV 实际功能验证将在 Phase 3（检测）中进行，当前阶段仅建立文档和环境变量约定，尚未接入 `opencv` crate
+- DPI 信息获取目前返回默认值（scale_factor=1.0, display_id=default），Phase 2/ROI 相关阶段将实现 Windows API 调用
+- 当前失效检测覆盖缩放因子和显示器 ID 变化；分辨率变化仍需在后续阶段结合真实显示器信息补齐
 
 ### 阻塞项
 无
@@ -178,7 +179,8 @@ _Note: TDD tasks may have multiple commits (test → feat → refactor)_
 - ✅ 2e5b716 - feat(01-03): 集成环境状态（OpenCV + DPI）到 UI
 
 ### 存根检查
-- 无存根发现。所有功能都已实现或正确标记为占位符（OpenCV 状态显示）
+- `get_current_dpi()` 目前返回 Phase 1 基线占位值，用于锁定坐标契约，不代表真实 OS DPI 查询已完成
+- OpenCV 状态展示为文档/配置提示，不代表仓库已经具备 OpenCV 自动探测能力
 
 ### 威胁标志检查
 - 无新的安全相关表面引入。DPI 命令是只读的，从 OS 获取信息，不涉及用户输入。
