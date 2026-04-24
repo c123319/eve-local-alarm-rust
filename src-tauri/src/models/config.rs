@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// Main monitoring configuration
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default)]
 pub struct MonitorConfig {
     pub targets: Vec<TargetConfig>,
     pub rois: Vec<RoiConfig>,
@@ -22,6 +23,7 @@ impl Default for MonitorConfig {
 
 /// Configuration for a target window (WGC mode)
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(default)]
 pub struct TargetConfig {
     pub id: String,
     pub window_title: String,
@@ -30,6 +32,7 @@ pub struct TargetConfig {
 
 /// Configuration for a region of interest (ROI)
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default)]
 pub struct RoiConfig {
     pub id: String,
     pub name: String,
@@ -56,6 +59,7 @@ impl Default for RoiConfig {
 
 /// Alert configuration
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default)]
 pub struct AlertConfig {
     pub enabled: bool,
     pub sound_enabled: bool,
@@ -78,6 +82,7 @@ impl Default for AlertConfig {
 
 /// Debug configuration
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default)]
 pub struct DebugConfig {
     pub enabled: bool,
     pub dump_hsv_masks: bool,
@@ -109,6 +114,7 @@ impl Default for CaptureMode {
 
 /// Rectangle region (in physical pixels)
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(default)]
 pub struct Rect {
     pub x: i32,
     pub y: i32,
@@ -118,6 +124,7 @@ pub struct Rect {
 
 /// Color matching rule configuration
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default)]
 pub struct ColorMatchConfig {
     pub name: String,
     pub hsv_lower: [u32; 3],
@@ -146,6 +153,7 @@ impl Default for ColorMatchConfig {
 
 /// DPI invalidation flags for ROI regions
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(default)]
 pub struct DpiInvalidationFlags {
     pub invalid: bool,
     pub last_dpi_scale: f64,

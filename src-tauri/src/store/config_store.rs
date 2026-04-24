@@ -1,6 +1,6 @@
 use crate::models::MonitorConfig;
-use std::path::PathBuf;
 use dirs::config_dir;
+use std::path::PathBuf;
 
 /// Config store for saving and loading MonitorConfig to/from disk
 pub struct ConfigStore {
@@ -10,21 +10,30 @@ pub struct ConfigStore {
 impl ConfigStore {
     /// Create a new ConfigStore with platform-appropriate config path
     pub fn new() -> Result<Self, String> {
-        let config_dir = config_dir()
-            .ok_or("Failed to get config directory")?;
-        let app_config_dir = config_dir.join("eve-local-alarm");
-
-        // Create directory if it doesn't exist
-        std::fs::create_dir_all(&app_config_dir)
-            .map_err(|e| format!("Failed to create config directory: {}", e))?;
-
-        let config_path = app_config_dir.join("config.json");
+        let config_path = Self::default_config_path()?;
 
         Ok(ConfigStore { config_path })
     }
 
+    fn default_config_path() -> Result<PathBuf, String> {
+        let config_dir = config_dir().ok_or("Failed to get config directory")?;
+        Ok(config_dir.join("eve-local-alarm").join("config.json"))
+    }
+
+    fn ensure_parent_dir(&self) -> Result<(), String> {
+        let parent = self
+            .config_path
+            .parent()
+            .ok_or("Failed to resolve config parent directory")?;
+
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create config directory: {}", e))
+    }
+
     /// Save configuration to disk
     pub fn save_config(&self, config: &MonitorConfig) -> Result<(), String> {
+        self.ensure_parent_dir()?;
+
         let json = serde_json::to_string_pretty(config)
             .map_err(|e| format!("Failed to serialize config: {}", e))?;
 
