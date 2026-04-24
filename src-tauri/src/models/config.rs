@@ -1,12 +1,23 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Main monitoring configuration
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MonitorConfig {
     pub targets: Vec<TargetConfig>,
     pub rois: Vec<RoiConfig>,
     pub alert: AlertConfig,
     pub debug: DebugConfig,
+}
+
+impl Default for MonitorConfig {
+    fn default() -> Self {
+        Self {
+            targets: Vec::new(),
+            rois: Vec::new(),
+            alert: AlertConfig::default(),
+            debug: DebugConfig::default(),
+        }
+    }
 }
 
 /// Configuration for a target window (WGC mode)
@@ -18,7 +29,7 @@ pub struct TargetConfig {
 }
 
 /// Configuration for a region of interest (ROI)
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RoiConfig {
     pub id: String,
     pub name: String,
@@ -29,8 +40,22 @@ pub struct RoiConfig {
     pub dpi_invalidation_flags: DpiInvalidationFlags,
 }
 
+impl Default for RoiConfig {
+    fn default() -> Self {
+        Self {
+            id: String::new(),
+            name: "本地列表区域".to_string(),
+            capture_mode: CaptureMode::MSS,
+            region: Rect::default(),
+            color_rules: vec![ColorMatchConfig::default_hostile_marker()],
+            debounce_ms: 1_500,
+            dpi_invalidation_flags: DpiInvalidationFlags::default(),
+        }
+    }
+}
+
 /// Alert configuration
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AlertConfig {
     pub enabled: bool,
     pub sound_enabled: bool,
@@ -39,13 +64,36 @@ pub struct AlertConfig {
     pub cooldown_ms: u64,
 }
 
+impl Default for AlertConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            sound_enabled: true,
+            sound_path: String::new(),
+            toast_enabled: true,
+            cooldown_ms: 3_000,
+        }
+    }
+}
+
 /// Debug configuration
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DebugConfig {
     pub enabled: bool,
     pub dump_hsv_masks: bool,
     pub dump_overlays: bool,
     pub debug_dir: String,
+}
+
+impl Default for DebugConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            dump_hsv_masks: false,
+            dump_overlays: false,
+            debug_dir: "debug".to_string(),
+        }
+    }
 }
 
 /// Capture mode enumeration
@@ -69,13 +117,31 @@ pub struct Rect {
 }
 
 /// Color matching rule configuration
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ColorMatchConfig {
     pub name: String,
     pub hsv_lower: [u32; 3],
     pub hsv_upper: [u32; 3],
     pub min_pixels: u32,
     pub min_ratio: f64,
+}
+
+impl ColorMatchConfig {
+    pub fn default_hostile_marker() -> Self {
+        Self {
+            name: "敌对标记".to_string(),
+            hsv_lower: [0, 120, 120],
+            hsv_upper: [15, 255, 255],
+            min_pixels: 12,
+            min_ratio: 0.02,
+        }
+    }
+}
+
+impl Default for ColorMatchConfig {
+    fn default() -> Self {
+        Self::default_hostile_marker()
+    }
 }
 
 /// DPI invalidation flags for ROI regions

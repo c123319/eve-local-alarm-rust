@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 interface ConfigStatus {
@@ -8,8 +8,61 @@ interface ConfigStatus {
   last_modified: number;
 }
 
+interface AlertConfig {
+  enabled: boolean;
+  sound_enabled: boolean;
+  sound_path: string;
+  toast_enabled: boolean;
+  cooldown_ms: number;
+}
+
+interface DebugConfig {
+  enabled: boolean;
+  dump_hsv_masks: boolean;
+  dump_overlays: boolean;
+  debug_dir: string;
+}
+
+interface MonitorConfig {
+  targets: unknown[];
+  rois: unknown[];
+  alert: AlertConfig;
+  debug: DebugConfig;
+}
+
+const createFallbackConfig = (): MonitorConfig => ({
+  targets: [],
+  rois: [],
+  alert: {
+    enabled: true,
+    sound_enabled: true,
+    sound_path: '',
+    toast_enabled: true,
+    cooldown_ms: 3000,
+  },
+  debug: {
+    enabled: false,
+    dump_hsv_masks: false,
+    dump_overlays: false,
+    debug_dir: 'debug',
+  },
+});
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+};
+
 export function SettingsPanel() {
   const [configStatus, setConfigStatus] = useState<ConfigStatus | null>(null);
+  const [config, setConfig] = useState<MonitorConfig>(createFallbackConfig);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -29,36 +82,43 @@ export function SettingsPanel() {
 
   const loadConfig = async () => {
     try {
-      await invoke('load_config');
+      const loadedConfig = await invoke<MonitorConfig>('load_config');
+      setConfig(loadedConfig);
       setMessage('配置已加载');
       fetchConfigStatus();
-    } catch (err: any) {
-      // D-04: Show clear warning for missing/corrupted config
-      const errorMsg = err as string;
+    } catch (err: unknown) {
+      const fallbackConfig = await invoke<MonitorConfig>('get_default_config');
+      setConfig(fallbackConfig);
+
+      // D-04: Show clear warning for missing/corrupted config and fall back to defaults
+      const errorMsg = getErrorMessage(err);
       if (errorMsg.includes('not found')) {
         setMessage('配置文件未找到，已使用默认配置');
       } else {
-        setMessage(`加载配置失败: ${errorMsg}`);
+        setMessage(`配置文件无效，已回退默认配置：${errorMsg}`);
       }
+
+      fetchConfigStatus();
     }
   };
 
   const saveConfig = async () => {
     try {
-      await invoke('save_config', { config: {} }); // Placeholder for actual config
+      await invoke('save_config', { config });
       setMessage('配置已保存');
       fetchConfigStatus();
-    } catch (err: any) {
-      setMessage(`保存配置失败: ${err}`);
+    } catch (err: unknown) {
+      setMessage(`保存配置失败: ${getErrorMessage(err)}`);
     }
   };
 
   const loadDefaults = async () => {
     try {
-      await invoke('get_default_config');
+      const defaultConfig = await invoke<MonitorConfig>('get_default_config');
+      setConfig(defaultConfig);
       setMessage('已加载默认配置');
-    } catch (err: any) {
-      setMessage(`加载默认配置失败: ${err}`);
+    } catch (err: unknown) {
+      setMessage(`加载默认配置失败: ${getErrorMessage(err)}`);
     }
   };
 
@@ -102,6 +162,15 @@ export function SettingsPanel() {
 
       <section>
         <h2>配置操作</h2>
+        <div style={{ marginBottom: '10px' }}>
+          <strong>当前默认冷却：</strong> {config.alert.cooldown_ms} ms
+        </div>
+        <div style={{ marginBottom: '10px' }}>
+          <strong>Toast 提醒：</strong> {config.alert.toast_enabled ? '开启' : '关闭'}
+        </div>
+        <div style={{ marginBottom: '10px' }}>
+          <strong>调试输出目录：</strong> {config.debug.debug_dir}
+        </div>
         <div>
           <button
             onClick={saveConfig}
