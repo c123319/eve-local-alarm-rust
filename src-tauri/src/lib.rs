@@ -5,7 +5,7 @@ mod models;
 // Store modules
 mod store;
 
-use commands::{save_config, load_config};
+use commands::{save_config, load_config, get_default_config, get_config_status};
 
 /// Event names for Rust → Frontend communication
 pub mod events {
@@ -21,6 +21,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             save_config,
             load_config,
+            get_default_config,
+            get_config_status,
         ])
         .setup(|_app| {
             // Event channel setup for future Phase 2+ use
