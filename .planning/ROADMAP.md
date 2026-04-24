@@ -12,7 +12,7 @@ This roadmap takes the project from planning-only state to a complete Windows de
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation and Config Spine** - Establish the Tauri scaffold, build environment, config model, and DPI/runtime safety rules.
+- [x] **Phase 1: Foundation and Config Spine** - Establish the Tauri scaffold, build environment, config model, and DPI/runtime safety rules. (completed 2026-04-24)
 - [ ] **Phase 2: MSS Capture Loop** - Ship a working single-ROI desktop capture loop that can be started and stopped safely.
 - [ ] **Phase 3: HSV Detection Engine** - Turn captured frames into structured hostile-detection results with threshold controls.
 - [ ] **Phase 4: Alert Pipeline** - Deliver popup, sound, and Windows Toast alerts with cooldown and anti-spam behavior.
@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01: Scaffold Tauri v2 + React + TypeScript app shell and baseline Rust/frontend wiring.
 - [x] 01-02: Implement config structs, JSON persistence, defaults, and runtime freeze behavior.
-- [ ] 01-03: Document Windows/OpenCV build prerequisites and codify DPI coordinate rules.
+- [x] 01-03: Document Windows/OpenCV build prerequisites and codify DPI coordinate rules.
 
 ### Phase 2: MSS Capture Loop
 **Goal**: Deliver a working single-region capture loop that can acquire frames from the desktop and expose monitoring lifecycle hooks.
@@ -148,7 +148,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Config Spine | 3/3 | Planned | - |
+| 1. Foundation and Config Spine | 3/3 | Complete   | 2026-04-24 |
 | 2. MSS Capture Loop | 0/2 | Not started | - |
 | 3. HSV Detection Engine | 0/3 | Not started | - |
 | 4. Alert Pipeline | 0/3 | Not started | - |

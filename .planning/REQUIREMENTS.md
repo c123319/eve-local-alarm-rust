@@ -64,7 +64,7 @@
 ### Platform and Reliability
 
 - [x] **PLAT-01**: App runs on Windows 10/11 only and does not promise cross-platform behavior.
-- [ ] **PLAT-02**: OpenCV build prerequisites are explicit enough that developers can build the project reliably.
+- [x] **PLAT-02**: OpenCV build prerequisites are explicit enough that developers can build the project reliably.
 - [ ] **PLAT-03**: Rust-to-frontend event traffic is throttled so active monitoring does not freeze the UI.
 
 ## v2 Requirements
@@ -100,7 +100,7 @@
 | CONF-03 | Phase 1 | Complete |
 | CONF-04 | Phase 1 | Complete |
 | PLAT-01 | Phase 1 | Complete |
-| PLAT-02 | Phase 1 | Pending |
+| PLAT-02 | Phase 1 | Complete |
 | CAP-01 | Phase 2 | Pending |
 | UI-02 | Phase 2 | Pending |
 | DET-01 | Phase 3 | Pending |
