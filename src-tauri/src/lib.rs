@@ -1,5 +1,7 @@
 // Command modules
 mod commands;
+// Model modules
+mod models;
 
 use commands::{save_config, load_config};
 
