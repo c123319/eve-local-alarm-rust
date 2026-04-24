@@ -13,8 +13,7 @@ dist-ssr
 *.local
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+.vscode/
 .idea
 .DS_Store
 *.suo
@@ -40,3 +39,6 @@ dist-ssr
 .claude/
 .omc/
 .opencode/
+
+# Local scaffold leftovers
+src/assets/
