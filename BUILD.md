@@ -22,7 +22,7 @@ cargo --version
 ```
 
 ### 3. Node.js
-- **Node.js 18+**（用于前端工具链）
+- **Node.js 20.19+**（当前 Vite 7 要求；建议使用最新 LTS）
 - 从 https://nodejs.org/ 下载并安装 LTS 版本
 
 ```bash
@@ -32,7 +32,7 @@ npm --version
 ```
 
 ### 4. OpenCV 4.8+（必需）
-本项目的图像检测功能依赖 OpenCV。**必须在构建前正确配置。**
+本项目的图像检测功能后续会依赖 OpenCV。**Phase 1 先固定构建约定与环境变量；当前仓库尚未接入 `opencv` crate。**
 
 ## OpenCV 设置
 
@@ -132,7 +132,7 @@ echo %OPENCV_LINK_LIBS%
 
 应该显示你设置的路径和库名称。
 
-### 步骤 2: 尝试构建
+### 步骤 2: 验证环境准备
 
 ```bash
 # 在项目根目录
@@ -140,8 +140,8 @@ cargo build --manifest-path src-tauri/Cargo.toml
 ```
 
 **预期结果：**
-- ✅ 编译成功，生成 `target\debug\eve_local_alarm.exe`
-- ❌ 如果看到链接器错误（如 `cannot find -lopencv_core`），请检查：
+- ✅ 当前 Phase 1 应至少能完成普通 Rust/Tauri 构建，并保留后续接入 OpenCV 所需的文档约定
+- ⚠ 当后续阶段引入 `opencv` crate 后，如果看到链接器错误（如 `cannot find -lopencv_core`），请检查：
   - 环境变量是否正确设置
   - OpenCV 架构是否与 Rust 目标匹配（必须都是 x64）
   - 是否重启了命令提示符
@@ -156,6 +156,8 @@ cargo build --manifest-path src-tauri/Cargo.toml
 | `LNK1112: 模块计算机类型 'x64' 与目标计算机类型 'X86' 冲突` | 架构不匹配 | 使用 `rustup default stable-x86_64-pc-windows-msvc` |
 | `无法打开包括文件: 'opencv2/...''` | 包含路径错误 | 检查 `OPENCV_INCLUDE_PATHS` |
 | `DPI 缩放问题` | 没有正确处理 DPI | 代码中已实现 DPI 坐标转换（见 `src-tauri/src/dpi/contract.rs`） |
+
+> 注意：当前 `src-tauri/src/dpi/contract.rs` 中的 `get_current_dpi()` 仍返回 Phase 1 基线占位值（`default`, `1.0`），真实的 Windows API DPI 读取将在后续阶段补上。
 
 ## 构建项目
 
@@ -264,6 +266,6 @@ npm install
 ## 版本信息
 
 - Rust 工具链：stable-x86_64-pc-windows-msvc
-- OpenCV：4.8.0 或更高版本（推荐）
-- Node.js：18+ LTS
+- OpenCV：4.8.0 或更高版本（推荐，用于后续接入 `opencv` crate）
+- Node.js：20.19+ LTS
 - Tauri：2.x
