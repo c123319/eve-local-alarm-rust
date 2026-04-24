@@ -33,10 +33,12 @@ key-decisions:
   - "Clear error messages for missing/corrupted config (D-04)"
 
 patterns-established:
-  - "Pattern: Config models derive Serialize, Deserialize, Clone, Debug, Default"
+  - "Pattern: Config models derive Serialize, Deserialize, Clone, Debug"
+  - "Pattern: Custom Default impls with sensible EVE Local Alert values"
   - "Pattern: Platform-appropriate paths via dirs crate"
   - "Pattern: Runtime freeze with deep copy via Clone derive"
   - "Pattern: Config status with exists/valid/last_modified fields"
+  - "Pattern: True fallback behavior on missing/corrupted config (UI calls get_default_config on error)"
   - "Pattern: Chinese error messages in all UI responses"
 
 requirements-completed: [CONF-01, CONF-02, CONF-03, CONF-04]
@@ -76,6 +78,9 @@ Each task was committed atomically:
 3. **Task 3: Implement runtime freeze and default configuration commands** - `e490a06` (feat)
 4. **Task 4: Wire config commands to frontend UI with Save/Load/Default functionality** - `a019a48` (feat)
 
+**Post-execution corrective commit:**
+5. **Fix: Implement sensible config defaults and fallback behavior** - `97fcd7f` (fix)
+
 ## Files Created/Modified
 
 - `src-tauri/src/models/mod.rs` - Models module organization
@@ -109,6 +114,54 @@ None - plan executed exactly as written.
   - **Resolution:** Added `get_default_config` and `get_config_status` to commands/mod.rs exports
   - **Committed in:** `e490a06` (Task 3 commit)
 
+## Post-Execution Corrective Follow-Up
+
+Post-execution verification identified three gaps in the original 01-02 implementation that prevented true satisfaction of CONF-01..CONF-04:
+
+**Issue 1: Defaults were derive-based empties instead of sensible values**
+- **Problem:** Original implementation used `#[derive(Default)]` which produced empty strings, zero values, and empty vectors
+- **Impact:** Users would get unusable config (empty HSV ranges, zero debounce, no alert settings)
+- **Fix:** Removed `Default` derive and implemented custom Default impls:
+  - AlertConfig: `enabled=true`, `sound_enabled=true`, `toast_enabled=true`, `cooldown_ms=3000`
+  - DebugConfig: `enabled=false`, `debug_dir="debug"`
+  - RoiConfig: `name="本地列表区域"`, `capture_mode=MSS`, `debounce_ms=1500`
+  - ColorMatchConfig: `default_hostile_marker()` with HSV ranges `[0,120,120]` to `[15,255,255]`, `min_pixels=12`, `min_ratio=0.02`
+- **Files modified:** `src-tauri/src/models/config.rs`
+- **Verification:** Defaults now match EVE Online Local chat monitoring requirements
+
+**Issue 2: Missing/corrupted config did not truly fall back to defaults**
+- **Problem:** UI showed error message but did not actually load and use default config
+- **Impact:** User would see error but have no usable config state
+- **Fix:** Updated `loadConfig()` to call `get_default_config` on error and store the result in state
+- **Files modified:** `src/components/SettingsPanel.tsx`
+- **Verification:** UI now loads defaults when config is missing or corrupted, per D-04
+
+**Issue 3: Frontend save path used placeholder empty object**
+- **Problem:** `saveConfig()` invoked with `config: {}` instead of actual config state
+- **Impact:** Saved config would always be empty, not reflecting user changes
+- **Fix:** Updated `saveConfig()` to invoke with actual `config` state from React useState
+- **Files modified:** `src/components/SettingsPanel.tsx`
+- **Verification:** Save command now sends complete config to backend
+
+**Additional improvements in corrective commit:**
+- Added TypeScript interfaces for AlertConfig, DebugConfig, MonitorConfig in frontend
+- Implemented `getErrorMessage()` utility for proper error handling
+- Added UI display of current config values (cooldown, toast, debug dir)
+- Improved error messages to distinguish between "not found" and "invalid" cases
+
+**Commit:** `97fcd7f` (fix) - 153 insertions, 18 deletions
+
+**Verification:**
+- `cargo check` passes (Rust backend compiles)
+- `npm run build` passes (TypeScript builds successfully)
+- All config values now have meaningful defaults for EVE Local Alert use case
+
+**Impact on plan:**
+- CONF-04 ("App ships with sensible default settings") now truly satisfied
+- D-04 ("Clear error messages with fallback") now fully implemented
+- No scope creep - all changes within original plan intent
+- Original 4 task commits remain valid; this is post-execution quality improvement
+
 ## User Setup Required
 
 None - no external service configuration required. Config files are stored in platform-appropriate directory via dirs crate.
@@ -133,6 +186,7 @@ All files created and all commits verified:
 - 41109a2 - Task 2 commit ✓
 - e490a06 - Task 3 commit ✓
 - a019a48 - Task 4 commit ✓
+- 97fcd7f - Post-execution corrective commit ✓
 
 ---
 *Phase: 01-foundation-and-config-spine*
