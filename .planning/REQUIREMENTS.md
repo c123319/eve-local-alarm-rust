@@ -7,10 +7,10 @@
 
 ### Configuration
 
-- [ ] **CONF-01**: User can save all monitoring settings to a local JSON config file.
-- [ ] **CONF-02**: User can load a previously saved JSON config file on app start or on demand.
-- [ ] **CONF-03**: Monitoring runs against a frozen runtime copy of the config so in-flight detection is not affected by live edits.
-- [ ] **CONF-04**: App ships with sensible default settings for EVE Local monitoring on Windows.
+- [x] **CONF-01**: User can save all monitoring settings to a local JSON config file.
+- [x] **CONF-02**: User can load a previously saved JSON config file on app start or on demand.
+- [x] **CONF-03**: Monitoring runs against a frozen runtime copy of the config so in-flight detection is not affected by live edits.
+- [x] **CONF-04**: App ships with sensible default settings for EVE Local monitoring on Windows.
 
 ### Capture
 
@@ -95,10 +95,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONF-01 | Phase 1 | Pending |
-| CONF-02 | Phase 1 | Pending |
-| CONF-03 | Phase 1 | Pending |
-| CONF-04 | Phase 1 | Pending |
+| CONF-01 | Phase 1 | Complete |
+| CONF-02 | Phase 1 | Complete |
+| CONF-03 | Phase 1 | Complete |
+| CONF-04 | Phase 1 | Complete |
 | PLAT-01 | Phase 1 | Complete |
 | PLAT-02 | Phase 1 | Pending |
 | CAP-01 | Phase 2 | Pending |

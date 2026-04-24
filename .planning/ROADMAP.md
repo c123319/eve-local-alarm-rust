@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01: Scaffold Tauri v2 + React + TypeScript app shell and baseline Rust/frontend wiring.
-- [ ] 01-02: Implement config structs, JSON persistence, defaults, and runtime freeze behavior.
+- [x] 01-02: Implement config structs, JSON persistence, defaults, and runtime freeze behavior.
 - [ ] 01-03: Document Windows/OpenCV build prerequisites and codify DPI coordinate rules.
 
 ### Phase 2: MSS Capture Loop
