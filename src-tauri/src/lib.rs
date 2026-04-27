@@ -6,6 +6,8 @@ mod models;
 mod store;
 // DPI module
 mod dpi;
+// Capture module
+mod capture;
 
 use commands::{save_config, load_config, get_default_config, get_config_status, get_dpi_info, validate_roi_coordinates};
 
