@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(default)]
 pub struct MonitorConfig {
+    pub capture_fps: u32,
     pub targets: Vec<TargetConfig>,
     pub rois: Vec<RoiConfig>,
     pub alert: AlertConfig,
@@ -13,6 +14,7 @@ pub struct MonitorConfig {
 impl Default for MonitorConfig {
     fn default() -> Self {
         Self {
+            capture_fps: 5,
             targets: Vec::new(),
             rois: Vec::new(),
             alert: AlertConfig::default(),
