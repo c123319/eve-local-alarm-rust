@@ -49,8 +49,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: Build MSS capture service and frame-delivery contract.
-- [ ] 02-02: Wire start/stop monitoring lifecycle between frontend and Rust backend.
+- [x] 02-01: Build MSS capture service and frame-delivery contract.
+- [x] 02-02: Wire start/stop monitoring lifecycle between frontend and Rust backend.
 
 ### Phase 3: HSV Detection Engine
 **Goal**: Convert captured frames into configurable hostile-marker detection results with bounded latency.
