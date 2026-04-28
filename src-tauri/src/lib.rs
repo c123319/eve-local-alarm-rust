@@ -8,6 +8,8 @@ mod store;
 mod dpi;
 // Capture module
 mod capture;
+// Detection module
+mod detection;
 
 use commands::{
     get_config_status, get_default_config, get_dpi_info, get_monitoring_status, load_config,
