@@ -6,8 +6,22 @@ use crate::models::ColorMatchConfig;
 /// - min_pixels > 0
 /// - min_ratio in (0.0, 1.0]
 /// - hsv_lower <= hsv_upper per channel
-pub fn validate_color_match_config(_config: &ColorMatchConfig) -> Result<(), String> {
-    todo!()
+pub fn validate_color_match_config(config: &ColorMatchConfig) -> Result<(), String> {
+    if config.min_pixels == 0 {
+        return Err("最小像素数必须大于 0".to_string());
+    }
+    if config.min_ratio <= 0.0 || config.min_ratio > 1.0 {
+        return Err("最小像素比例必须在 (0.0, 1.0] 范围内".to_string());
+    }
+    for ch in 0..3 {
+        if config.hsv_lower[ch] > config.hsv_upper[ch] {
+            return Err(format!(
+                "HSV 下界不能大于上界 (通道 {}): {} > {}",
+                ch, config.hsv_lower[ch], config.hsv_upper[ch]
+            ));
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
