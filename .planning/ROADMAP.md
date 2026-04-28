@@ -63,8 +63,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: Create pure Rust HSV conversion module, pixel counting, and ColorMatchConfig validation.
-- [ ] 03-02: Build DetectionEngine with evaluate_frame, wire inline detection into monitoring lifecycle.
+- [x] 03-01: Create pure Rust HSV conversion module, pixel counting, and ColorMatchConfig validation.
+- [x] 03-02: Build DetectionEngine with evaluate_frame, wire inline detection into monitoring lifecycle.
 
 ### Phase 4: Alert Pipeline
 **Goal**: Turn positive detections into actionable popup, sound, and toast alerts without spamming the user.
