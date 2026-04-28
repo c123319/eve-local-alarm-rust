@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
 
 interface ConfigStatus {
   path: string;
@@ -23,9 +24,17 @@ interface DebugConfig {
   debug_dir: string;
 }
 
+interface RoiConfig {
+  id: string;
+  name: string;
+  capture_mode: string;
+  rect: { x: number; y: number; width: number; height: number };
+}
+
 interface MonitorConfig {
   targets: unknown[];
-  rois: unknown[];
+  rois: RoiConfig[];
+  capture_fps: number;
   alert: AlertConfig;
   debug: DebugConfig;
 }
@@ -35,9 +44,19 @@ interface DpiInfo {
   scale_factor: number;
 }
 
+type MonitoringStatus = 'Idle' | 'Starting' | 'Running' | 'Stopping' | 'Stopped' | 'Error';
+
+interface MonitoringSnapshot {
+  status: MonitoringStatus;
+  last_error: string | null;
+  capture_fps: number;
+  last_frame_at_ms: number | null;
+}
+
 const createFallbackConfig = (): MonitorConfig => ({
   targets: [],
   rois: [],
+  capture_fps: 5,
   alert: {
     enabled: true,
     sound_enabled: true,
@@ -73,6 +92,10 @@ export function SettingsPanel() {
   const [dpiInfo, setDpiInfo] = useState<DpiInfo | null>(null);
   const [opencvStatus, setOpencvStatus] = useState<string>('待检查');
 
+  // Monitoring State
+  const [monitoringSnapshot, setMonitoringSnapshot] = useState<MonitoringSnapshot | null>(null);
+  const [monitoringError, setMonitoringError] = useState<string | null>(null);
+
   useEffect(() => {
     // D-01: Auto-load last config on startup
     loadConfig();
@@ -80,6 +103,33 @@ export function SettingsPanel() {
 
     // 检查环境状态
     checkEnvironment();
+
+    // Fetch initial monitoring status
+    fetchMonitoringStatus();
+
+    let unlistenStatus: UnlistenFn | undefined;
+    let unlistenError: UnlistenFn | undefined;
+
+    const setupListeners = async () => {
+      unlistenStatus = await listen<MonitoringSnapshot>('monitoring-status', (event) => {
+        setMonitoringSnapshot(event.payload);
+        if (event.payload.status === 'Running' || event.payload.status === 'Idle' || event.payload.status === 'Stopped') {
+           setMonitoringError(null);
+        }
+      });
+
+      unlistenError = await listen<string>('monitoring-error', (event) => {
+        setMonitoringError(event.payload);
+        setMonitoringSnapshot(prev => prev ? { ...prev, status: 'Error', last_error: event.payload } : { status: 'Error', last_error: event.payload, capture_fps: 0, last_frame_at_ms: null });
+      });
+    };
+
+    setupListeners();
+
+    return () => {
+      if (unlistenStatus) unlistenStatus();
+      if (unlistenError) unlistenError();
+    };
   }, []);
 
   const checkEnvironment = async () => {
@@ -101,6 +151,15 @@ export function SettingsPanel() {
       setConfigStatus(status);
     } catch (err) {
       console.error('Failed to fetch config status:', err);
+    }
+  };
+
+  const fetchMonitoringStatus = async () => {
+    try {
+      const status = await invoke<MonitoringSnapshot>('get_monitoring_status');
+      setMonitoringSnapshot(status);
+    } catch (err) {
+      console.error('Failed to fetch monitoring status:', err);
     }
   };
 
@@ -145,6 +204,62 @@ export function SettingsPanel() {
       setMessage(`加载默认配置失败: ${getErrorMessage(err)}`);
     }
   };
+
+  const handleStartMonitoring = async () => {
+    try {
+      setMonitoringError(null);
+      if (monitoringSnapshot) {
+        setMonitoringSnapshot({ ...monitoringSnapshot, status: 'Starting' });
+      } else {
+        setMonitoringSnapshot({ status: 'Starting', last_error: null, capture_fps: config.capture_fps, last_frame_at_ms: null });
+      }
+      
+      const snapshot = await invoke<MonitoringSnapshot>('start_monitoring', { config });
+      setMonitoringSnapshot(snapshot);
+    } catch (err: unknown) {
+      const errorMsg = getErrorMessage(err);
+      setMonitoringError(errorMsg);
+      if (monitoringSnapshot) {
+        setMonitoringSnapshot({ ...monitoringSnapshot, status: 'Error', last_error: errorMsg });
+      }
+    }
+  };
+
+  const handleStopMonitoring = async () => {
+    if (!window.confirm('停止监控：确定要停止当前监控吗？')) {
+      return;
+    }
+    
+    try {
+      if (monitoringSnapshot) {
+        setMonitoringSnapshot({ ...monitoringSnapshot, status: 'Stopping' });
+      }
+      
+      const snapshot = await invoke<MonitoringSnapshot>('stop_monitoring');
+      setMonitoringSnapshot(snapshot);
+    } catch (err: unknown) {
+      const errorMsg = getErrorMessage(err);
+      setMonitoringError(errorMsg);
+    }
+  };
+
+  const getStatusTextAndColor = (status: MonitoringStatus | undefined) => {
+    switch (status) {
+      case 'Idle': return { text: '未启动', color: '#0f0f0f' };
+      case 'Starting': return { text: '启动中...', color: '#e67e22' };
+      case 'Running': return { text: '运行中', color: '#28a745' };
+      case 'Stopping': return { text: '停止中...', color: '#e67e22' };
+      case 'Stopped': return { text: '已停止', color: '#0f0f0f' };
+      case 'Error': return { text: '错误', color: '#dc3545' };
+      default: return { text: '未启动', color: '#0f0f0f' };
+    }
+  };
+
+  const statusInfo = getStatusTextAndColor(monitoringSnapshot?.status);
+  const isMonitoring = monitoringSnapshot?.status === 'Running';
+  const isStarting = monitoringSnapshot?.status === 'Starting';
+  const isStopping = monitoringSnapshot?.status === 'Stopping';
+  const displayFps = monitoringSnapshot?.capture_fps ?? config.capture_fps ?? 0;
 
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
@@ -196,6 +311,45 @@ export function SettingsPanel() {
             </div>
           )}
         </div>
+      </section>
+
+      <section style={{ marginBottom: '24px' }}>
+        <h2>监控控制</h2>
+        <div style={{ marginBottom: '16px' }} aria-live="polite">
+          <strong>当前状态：</strong>
+          <span style={{ color: statusInfo.color }}>{statusInfo.text}</span>
+        </div>
+
+        <div style={{ marginBottom: '16px', color: '#856404' }}>
+          ⚠️ MSS 模式仅捕获屏幕可见区域。请确保监控区域不被遮挡。
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <strong>捕获帧率：</strong> {displayFps} FPS
+        </div>
+
+        <div>
+          <button
+            onClick={handleStartMonitoring}
+            disabled={isMonitoring || isStarting || isStopping}
+            style={{ marginRight: '10px', padding: '8px 16px' }}
+          >
+            开始监控
+          </button>
+          <button
+            onClick={handleStopMonitoring}
+            disabled={!isMonitoring || isStarting || isStopping}
+            style={{ padding: '8px 16px' }}
+          >
+            停止监控
+          </button>
+        </div>
+
+        {monitoringError && (
+          <div style={{ marginTop: '16px', padding: '10px', backgroundColor: '#f8d7da', borderRadius: '4px', color: '#721c24' }}>
+            监控失败：{monitoringError}。请检查配置后重试。
+          </div>
+        )}
       </section>
 
       <section>
