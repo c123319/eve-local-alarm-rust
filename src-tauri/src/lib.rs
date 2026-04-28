@@ -9,19 +9,28 @@ mod dpi;
 // Capture module
 mod capture;
 
-use commands::{save_config, load_config, get_default_config, get_config_status, get_dpi_info, validate_roi_coordinates};
+use commands::{
+    get_config_status, get_default_config, get_dpi_info, get_monitoring_status, load_config,
+    save_config, start_monitoring, stop_monitoring, validate_roi_coordinates,
+};
+use commands::monitoring::MonitoringController;
 
-/// Event names for Rust → Frontend communication
+/// Event names for Rust → Frontend communication.
 pub mod events {
     pub const CONFIG_SAVED: &str = "config-saved";
     pub const CONFIG_LOADED: &str = "config-loaded";
     pub const ERROR: &str = "error";
+    /// Emitted whenever the monitoring status changes.
+    pub const MONITORING_STATUS: &str = "monitoring-status";
+    /// Emitted when a monitoring error occurs.
+    pub const MONITORING_ERROR: &str = "monitoring-error";
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .manage(MonitoringController::default())
         .invoke_handler(tauri::generate_handler![
             save_config,
             load_config,
@@ -29,10 +38,11 @@ pub fn run() {
             get_config_status,
             get_dpi_info,
             validate_roi_coordinates,
+            start_monitoring,
+            stop_monitoring,
+            get_monitoring_status,
         ])
         .setup(|_app| {
-            // Event channel setup for future Phase 2+ use
-            // Example pattern: _app.emit(events::CONFIG_SAVED, payload)?;
             Ok(())
         })
         .run(tauri::generate_context!())
