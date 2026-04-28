@@ -184,6 +184,22 @@ pub async fn stop_monitoring(
     state: tauri::State<'_, MonitoringController>,
     app: tauri::AppHandle,
 ) -> Result<MonitoringSnapshot, String> {
+    // Pre-check – reject if monitoring is not in an active state.
+    {
+        let inner = state
+            .inner
+            .lock()
+            .map_err(|_| "内部状态锁定失败".to_string())?;
+        if !matches!(
+            inner.status,
+            MonitoringStatus::Running | MonitoringStatus::Starting
+        ) {
+            let error = "监控未在运行中".to_string();
+            let _ = app.emit(crate::events::MONITORING_ERROR, &error);
+            return Err(error);
+        }
+    }
+
     // Step 1 – take the worker and mark Stopping atomically.
     let worker_opt = {
         let mut inner = state
