@@ -60,12 +60,11 @@ Plans:
   1. User can configure HSV bounds, min_pixels, and min_ratio for hostile detection.
   2. Monitoring evaluates each captured frame and produces structured detection outcomes.
   3. Detection latency stays bounded by dropping stale frames instead of queueing indefinitely.
-**Plans**: 3 plans
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: Integrate OpenCV HSV pipeline and typed detection result model.
-- [ ] 03-02: Implement threshold configuration, validation, and runtime evaluation logic.
-- [ ] 03-03: Add latest-frame-wins behavior and baseline detection tests.
+- [ ] 03-01: Create pure Rust HSV conversion module, pixel counting, and ColorMatchConfig validation.
+- [ ] 03-02: Build DetectionEngine with evaluate_frame, wire inline detection into monitoring lifecycle.
 
 ### Phase 4: Alert Pipeline
 **Goal**: Turn positive detections into actionable popup, sound, and toast alerts without spamming the user.
@@ -150,7 +149,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 1. Foundation and Config Spine | 3/3 | Complete   | 2026-04-24 |
 | 2. MSS Capture Loop | 0/2 | Not started | - |
-| 3. HSV Detection Engine | 0/3 | Not started | - |
+| 3. HSV Detection Engine | 0/2 | Not started | - |
 | 4. Alert Pipeline | 0/3 | Not started | - |
 | 5. ROI Selector and Preview UX | 0/3 | Not started | - |
 | 6. WGC Multi-Window Monitoring | 0/3 | Not started | - |
