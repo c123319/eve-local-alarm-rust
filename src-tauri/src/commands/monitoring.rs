@@ -9,6 +9,8 @@ use tauri::Emitter;
 
 use crate::capture::{MssCaptureWorker, MonitoringSnapshot, MonitoringStatus};
 use crate::commands::config::create_frozen_config;
+use crate::detection::validation::validate_color_match_config;
+use crate::detection::{DetectionEngine, DetectionResult};
 use crate::models::{CaptureMode, MonitorConfig, RoiConfig};
 
 // ─── Inner mutable state ─────────────────────────────────────────────────────
@@ -19,6 +21,10 @@ struct MonitoringControllerInner {
     /// Active capture worker, present only while Running or Stopping.
     worker: Option<MssCaptureWorker>,
     capture_fps: u32,
+    /// HSV 检测引擎
+    detection_engine: Option<DetectionEngine>,
+    /// 最新检测结果
+    latest_detection: Option<DetectionResult>,
 }
 
 impl MonitoringControllerInner {
@@ -56,6 +62,8 @@ impl Default for MonitoringController {
                 last_error: None,
                 worker: None,
                 capture_fps: 5,
+                detection_engine: None,
+                latest_detection: None,
             }),
         }
     }
@@ -108,6 +116,11 @@ pub async fn start_monitoring(
 
     let capture_fps = frozen.capture_fps;
 
+    // 验证所有颜色规则配置
+    for rule in &mss_roi.color_rules {
+        validate_color_match_config(rule)?;
+    }
+
     // Step 3 & 4 – atomic check-then-transition under the lock.
     {
         let mut inner = state
@@ -151,6 +164,8 @@ pub async fn start_monitoring(
                     .map_err(|_| "内部状态锁定失败".to_string())?;
                 inner.status = MonitoringStatus::Running;
                 inner.worker = Some(worker);
+                inner.detection_engine = Some(DetectionEngine::new(mss_roi.color_rules.clone()));
+                inner.latest_detection = None;
                 inner.to_snapshot()
             };
             let _ = app.emit(crate::events::MONITORING_STATUS, &snapshot);
@@ -246,6 +261,8 @@ pub async fn stop_monitoring(
             .lock()
             .map_err(|_| "内部状态锁定失败".to_string())?;
         inner.status = MonitoringStatus::Stopped;
+        inner.detection_engine = None;
+        inner.latest_detection = None;
         inner.to_snapshot()
     };
     let _ = app.emit(crate::events::MONITORING_STATUS, &snapshot);
@@ -264,12 +281,60 @@ pub async fn get_monitoring_status(
     Ok(inner.to_snapshot())
 }
 
+/// 评估最新捕获帧的检测结果
+///
+/// 获取最新捕获帧，使用检测引擎评估，发射 detection-result 事件，
+/// 并返回检测结果。采用 clone-out-of-lock 模式避免长时间持有 Mutex。
+#[tauri::command]
+pub async fn evaluate_latest_frame(
+    state: tauri::State<'_, MonitoringController>,
+    app: tauri::AppHandle,
+) -> Result<Option<DetectionResult>, String> {
+    // Clone engine and get frame outside of long-held lock
+    let (engine, frame_opt) = {
+        let inner = state
+            .inner
+            .lock()
+            .map_err(|_| "内部状态锁定失败".to_string())?;
+
+        let engine = inner
+            .detection_engine
+            .as_ref()
+            .ok_or_else(|| "检测引擎未初始化".to_string())?
+            .clone();
+
+        let frame = inner.worker.as_ref().and_then(|w| w.get_latest_frame());
+
+        (engine, frame)
+    };
+
+    let Some(frame) = frame_opt else {
+        return Ok(None);
+    };
+
+    let result = engine.evaluate_frame(&frame);
+
+    // 存储最新检测结果（brief lock to update state）
+    {
+        let mut inner = state
+            .inner
+            .lock()
+            .map_err(|_| "内部状态锁定失败".to_string())?;
+        inner.latest_detection = Some(result.clone());
+    }
+
+    // 发射检测结果事件（per D-11）
+    let _ = app.emit(crate::events::DETECTION_RESULT, &result);
+
+    Ok(Some(result))
+}
+
 // ─── Unit tests ──────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{MonitorConfig, Rect, RoiConfig};
+    use crate::models::{ColorMatchConfig, MonitorConfig, Rect, RoiConfig};
 
     // ── Test helpers ─────────────────────────────────────────────────────────
 
@@ -494,5 +559,65 @@ mod tests {
         let snap = inner.to_snapshot();
         assert_eq!(snap.status, MonitoringStatus::Error);
         assert_eq!(snap.last_error.as_deref(), Some("捕获失败"));
+    }
+
+    // ── Detection integration ─────────────────────────────────────────────
+
+    #[test]
+    fn color_rule_validation_rejected_on_start() {
+        // Create config with invalid color rule (min_pixels = 0)
+        let mut cfg = MonitorConfig::default();
+        cfg.rois.push(RoiConfig {
+            id: "roi-test".to_string(),
+            capture_mode: CaptureMode::MSS,
+            region: Rect {
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 80,
+            },
+            color_rules: vec![ColorMatchConfig {
+                name: "invalid".to_string(),
+                hsv_lower: [0, 120, 120],
+                hsv_upper: [15, 255, 255],
+                min_pixels: 0, // invalid
+                min_ratio: 0.02,
+            }],
+            ..RoiConfig::default()
+        });
+        let frozen = create_frozen_config(&cfg);
+        let roi = find_mss_roi(&frozen).unwrap();
+        // Validation should fail
+        for rule in &roi.color_rules {
+            let result = validate_color_match_config(rule);
+            assert!(result.is_err());
+            assert!(result.unwrap_err().contains("最小像素数必须大于 0"));
+        }
+    }
+
+    #[test]
+    fn detection_result_event_name_is_correct() {
+        assert_eq!(crate::events::DETECTION_RESULT, "detection-result");
+    }
+
+    #[test]
+    fn controller_inner_carries_detection_engine_field() {
+        let controller = MonitoringController::default();
+        let inner = controller.inner.lock().unwrap();
+        assert!(inner.detection_engine.is_none());
+        assert!(inner.latest_detection.is_none());
+    }
+
+    #[test]
+    fn controller_inner_can_hold_detection_engine() {
+        let controller = MonitoringController::default();
+        {
+            let mut inner = controller.inner.lock().unwrap();
+            inner.detection_engine = Some(DetectionEngine::new(vec![
+                ColorMatchConfig::default_hostile_marker(),
+            ]));
+        }
+        let inner = controller.inner.lock().unwrap();
+        assert!(inner.detection_engine.is_some());
     }
 }

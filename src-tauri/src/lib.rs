@@ -15,7 +15,7 @@ use commands::{
     get_config_status, get_default_config, get_dpi_info, get_monitoring_status, load_config,
     save_config, start_monitoring, stop_monitoring, validate_roi_coordinates,
 };
-use commands::monitoring::MonitoringController;
+use commands::monitoring::{evaluate_latest_frame, MonitoringController};
 
 /// Event names for Rust → Frontend communication.
 pub mod events {
@@ -26,6 +26,8 @@ pub mod events {
     pub const MONITORING_STATUS: &str = "monitoring-status";
     /// Emitted when a monitoring error occurs.
     pub const MONITORING_ERROR: &str = "monitoring-error";
+    /// 检测结果事件（供 Phase 4 告警消费）
+    pub const DETECTION_RESULT: &str = "detection-result";
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -43,6 +45,7 @@ pub fn run() {
             start_monitoring,
             stop_monitoring,
             get_monitoring_status,
+            evaluate_latest_frame,
         ])
         .setup(|_app| {
             Ok(())
