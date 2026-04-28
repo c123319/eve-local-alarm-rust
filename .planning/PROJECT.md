@@ -29,19 +29,18 @@ Detect hostile markers in EVE Online local chat regions and alert the user immed
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Configuration save/load to JSON with runtime freeze (deep copy on start) — Validated in Phase 01
+- [x] Capture screen regions via MSS-style desktop capture for single ROI monitoring — Validated in Phase 02
 
 ### Active
 
 - [ ] Capture screen regions via Windows Graphics Capture (WGC) API for multi-window monitoring
-- [ ] Capture screen regions via MSS-style desktop capture for single ROI monitoring
 - [ ] Detect hostile markers using HSV color matching (configurable HSV ranges with min_pixels/min_ratio thresholds)
 - [ ] Alert via popup notification with auto-close and cooldown
 - [ ] Alert via sound playback (configurable sound file)
 - [ ] Alert via Windows Toast notification
 - [ ] ROI selector with real-time preview and hit box overlay
 - [ ] Multi-window monitoring with per-window capture + detect pipelines
-- [ ] Configuration save/load to JSON with runtime freeze (deep copy on start)
 - [ ] System tray support (minimize-to-tray, quick start/stop)
 - [ ] Per-ROI debounce/cooldown
 - [ ] Debug mode with image dumps for HSV masks
@@ -108,4 +107,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 — Milestone v1.0 started*
+*Last updated: 2026-04-28 — Phase 02 complete (MSS capture + monitoring lifecycle)*
