@@ -128,7 +128,10 @@ impl MssCaptureWorker {
 
     /// 获取最新帧
     pub fn get_latest_frame(&self) -> Option<CapturedFrame> {
-        self.latest_frame.lock().unwrap().clone()
+        match self.latest_frame.lock() {
+            Ok(guard) => guard.clone(),
+            Err(poisoned) => poisoned.into_inner().clone(),
+        }
     }
 
     /// 捕获循环
@@ -153,7 +156,10 @@ impl MssCaptureWorker {
             match Self::capture_frame(&roi_id, &region) {
                 Ok(frame) => {
                     // 存储最新帧（最新帧获胜）
-                    let mut guard = latest_frame.lock().unwrap();
+                    let mut guard = match latest_frame.lock() {
+                        Ok(g) => g,
+                        Err(poisoned) => poisoned.into_inner(),
+                    };
                     *guard = Some(frame);
                     drop(guard);
                 }
@@ -239,7 +245,7 @@ pub fn now_millis() -> u128 {
     use std::time::{SystemTime, UNIX_EPOCH};
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .unwrap_or_default()
         .as_millis()
 }
 
