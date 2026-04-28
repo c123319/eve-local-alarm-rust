@@ -2,13 +2,60 @@ use crate::models::ColorMatchConfig;
 
 /// 将 RGBA 像素转换为 HSV 颜色空间（OpenCV 半范围约定：H:0-179, S:0-255, V:0-255）
 #[inline]
-pub fn rgba_pixel_to_hsv(_r: u8, _g: u8, _b: u8) -> (u8, u8, u8) {
-    todo!()
+pub fn rgba_pixel_to_hsv(r: u8, g: u8, b: u8) -> (u8, u8, u8) {
+    let rf = r as f32 / 255.0;
+    let gf = g as f32 / 255.0;
+    let bf = b as f32 / 255.0;
+
+    let max = rf.max(gf).max(bf);
+    let min = rf.min(gf).min(bf);
+    let delta = max - min;
+
+    // Value
+    let v = max;
+
+    // Saturation
+    let s = if max == 0.0 { 0.0 } else { delta / max };
+
+    // Hue
+    let h_deg = if delta == 0.0 {
+        0.0
+    } else if max == rf {
+        60.0 * (((gf - bf) / delta) % 6.0)
+    } else if max == gf {
+        60.0 * (((bf - rf) / delta) + 2.0)
+    } else {
+        60.0 * (((rf - gf) / delta) + 4.0)
+    };
+
+    // Normalize hue to [0, 360)
+    let h_deg = if h_deg < 0.0 { h_deg + 360.0 } else { h_deg };
+
+    // OpenCV half-range: H in [0, 179], S in [0, 255], V in [0, 255]
+    let h = (h_deg / 2.0) as u8;
+    let s = (s * 255.0) as u8;
+    let v = (v * 255.0) as u8;
+
+    (h, s, v)
 }
 
 /// 统计 RGBA 缓冲区内落在指定 HSV 范围内的像素数量
-pub fn count_matching_pixels(_rgba: &[u8], _rule: &ColorMatchConfig) -> usize {
-    todo!()
+pub fn count_matching_pixels(rgba: &[u8], rule: &ColorMatchConfig) -> usize {
+    let [h_lo, s_lo, v_lo] = rule.hsv_lower;
+    let [h_hi, s_hi, v_hi] = rule.hsv_upper;
+
+    rgba
+        .chunks_exact(4)
+        .filter(|pixel| {
+            let (h, s, v) = rgba_pixel_to_hsv(pixel[0], pixel[1], pixel[2]);
+            h >= h_lo as u8
+                && h <= h_hi as u8
+                && s >= s_lo as u8
+                && s <= s_hi as u8
+                && v >= v_lo as u8
+                && v <= v_hi as u8
+        })
+        .count()
 }
 
 #[cfg(test)]
@@ -45,8 +92,8 @@ mod tests {
     #[test]
     fn test_pure_green_to_hsv() {
         let (h, s, v) = rgba_pixel_to_hsv(0, 255, 0);
-        // OpenCV half-range: H = 60/2 = ~30
-        assert!(h >= 28 && h <= 32, "Green hue should be near 30, got {}", h);
+        // OpenCV half-range: H = 120/2 = ~60
+        assert!(h >= 58 && h <= 62, "Green hue should be near 60, got {}", h);
         assert_eq!(s, 255);
         assert_eq!(v, 255);
     }
