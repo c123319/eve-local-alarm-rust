@@ -22,6 +22,8 @@ struct MonitoringControllerInner {
 }
 
 impl MonitoringControllerInner {
+    /// Lock ordering: `inner` must always be acquired BEFORE `latest_frame`.
+    /// Never hold `latest_frame` while acquiring `inner`.
     fn to_snapshot(&self) -> MonitoringSnapshot {
         let last_frame_at_ms = self
             .worker
