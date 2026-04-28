@@ -28,7 +28,7 @@ interface RoiConfig {
   id: string;
   name: string;
   capture_mode: string;
-  rect: { x: number; y: number; width: number; height: number };
+  region: { x: number; y: number; width: number; height: number };
 }
 
 interface MonitorConfig {
